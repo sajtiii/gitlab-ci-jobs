@@ -1,8 +1,10 @@
+include:
+  - template: Dependency-Scanning.gitlab-ci.yml
+
 stages:
   - formatting
   - codequality
-  - security
-  - testing
+  - test
   - deploy
 
 # Variables
@@ -93,22 +95,22 @@ phpcpd:
 ##########################
 #    Dependabot checks   #
 ##########################
-dependabot:
-  stage: security
-  image: "php:${PHP_VERSION}-cli-alpine"
-  needs:
-    - phpcs
-    - phpcpd
-  variables:
-    SECURITY_CHECKER_FILENAME: local-php-security-checker_1.0.0_linux_amd64
-    SECURITY_CHECKER_URL: "https://github.com/fabpot/local-php-security-checker/releases/download/v1.0.0/${SECURITY_CHECKER_FILENAME}"
-  before_script:
-    - php -v
-    - apk add --no-cache curl
-  script:
-    - test -f "${SECURITY_CHECKER_FILENAME}" || curl -L ${SECURITY_CHECKER_URL} -o "${SECURITY_CHECKER_FILENAME}"
-    - chmod +x "${SECURITY_CHECKER_FILENAME}"
-    - "./${SECURITY_CHECKER_FILENAME}"
+# dependabot:
+#   stage: security
+#   image: "php:${PHP_VERSION}-cli-alpine"
+#   needs:
+#     - phpcs
+#     - phpcpd
+#   variables:
+#     SECURITY_CHECKER_FILENAME: local-php-security-checker_1.0.0_linux_amd64
+#     SECURITY_CHECKER_URL: "https://github.com/fabpot/local-php-security-checker/releases/download/v1.0.0/${SECURITY_CHECKER_FILENAME}"
+#   before_script:
+#     - php -v
+#     - apk add --no-cache curl
+#   script:
+#     - test -f "${SECURITY_CHECKER_FILENAME}" || curl -L ${SECURITY_CHECKER_URL} -o "${SECURITY_CHECKER_FILENAME}"
+#     - chmod +x "${SECURITY_CHECKER_FILENAME}"
+#     - "./${SECURITY_CHECKER_FILENAME}"
 
 
 
@@ -116,19 +118,19 @@ dependabot:
 #    Run PHPUnit Tests   #
 ##########################
 phpunit:
-  stage: testing
+  stage: test
   image: "edbizarro/gitlab-ci-pipeline-php:${PHP_VERSION}"
   needs:
     - dependabot
   variables:
     COMPOSER_AUTH_FILE: "{\"gitlab-token\":{\"gitlab.com\":\"${GITLAB_COMPOSER_REPOSITORY_TOKEN}\"}}"
   before_script:
+    - if [ ! -d "/tests" ]; then echo "tests/ directory not found. Skipping testing." && exit 0; fi
     - php -v
   script:
     - echo "${COMPOSER_AUTH_FILE}" > auth.json
     - composer install --no-interaction --quiet --prefer-dist
-    - ./vendor/bin/phpunit --version
-    - if [ -d "./tests" ]; then echo "Tests directory exists. Start testing..." && ./vendor/bin/phpunit; else echo "No tests directory. Skipping..."; fi
+    - ./vendor/bin/phpunit
 
 
 
