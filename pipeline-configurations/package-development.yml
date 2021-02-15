@@ -120,8 +120,8 @@ phpcpd:
 phpunit:
   stage: test
   image: "edbizarro/gitlab-ci-pipeline-php:${PHP_VERSION}"
-  needs:
-    - dependabot
+  # needs:
+  #   - dependabot
   variables:
     COMPOSER_AUTH_FILE: "{\"gitlab-token\":{\"gitlab.com\":\"${GITLAB_COMPOSER_REPOSITORY_TOKEN}\"}}"
   before_script:
